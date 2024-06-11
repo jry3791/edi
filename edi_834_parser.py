@@ -31,29 +31,37 @@ def parse_edi_834(file_content):
     # Parse each person's data
     for i in range(len(NM1_segments)):
         record = {}
+        
         # Parse NM1 segment
         nm1_parts = NM1_segments[i].split('*')
-        record['Member Name'] = nm1_parts[3] + ' ' + nm1_parts[4]
-        record['Member ID'] = nm1_parts[9]
+        if len(nm1_parts) >= 10:
+            record['Member Name'] = nm1_parts[3] + ' ' + nm1_parts[4]
+            record['Member ID'] = nm1_parts[9]
+        else:
+            continue  # Skip if the segment is incomplete
 
         # Parse N3 and N4 segments for address
-        n3_parts = N3_segments[i].split('*')
-        n4_parts = N4_segments[i].split('*')
-        record['Address'] = n3_parts[1]
-        record['City'] = n4_parts[1]
-        record['State'] = n4_parts[2]
-        record['ZIP'] = n4_parts[3]
+        if i < len(N3_segments):
+            n3_parts = N3_segments[i].split('*')
+            record['Address'] = n3_parts[1] if len(n3_parts) > 1 else ''
+        if i < len(N4_segments):
+            n4_parts = N4_segments[i].split('*')
+            record['City'] = n4_parts[1] if len(n4_parts) > 1 else ''
+            record['State'] = n4_parts[2] if len(n4_parts) > 2 else ''
+            record['ZIP'] = n4_parts[3] if len(n4_parts) > 3 else ''
 
         # Parse DMG segment for demographic information
-        dmg_parts = DMG_segments[i].split('*')
-        record['DOB'] = dmg_parts[2]
-        record['Gender'] = 'Male' if dmg_parts[3] == 'M' else 'Female'
+        if i < len(DMG_segments):
+            dmg_parts = DMG_segments[i].split('*')
+            record['DOB'] = dmg_parts[2] if len(dmg_parts) > 2 else ''
+            record['Gender'] = 'Male' if len(dmg_parts) > 3 and dmg_parts[3] == 'M' else 'Female'
 
         # Parse DTP segment for coverage date
+        record['Coverage Start Date'] = ''
         for dtp in DTP_segments:
             if 'DTP*348*D8' in dtp:
                 dtp_parts = dtp.split('*')
-                record['Coverage Start Date'] = dtp_parts[3]
+                record['Coverage Start Date'] = dtp_parts[3] if len(dtp_parts) > 3 else ''
                 break
 
         # Append the record to the list
