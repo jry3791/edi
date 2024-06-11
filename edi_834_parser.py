@@ -56,6 +56,15 @@ def parse_edi_834(file_content):
             record['DOB'] = dmg_parts[2] if len(dmg_parts) > 2 else ''
             record['Gender'] = 'Male' if len(dmg_parts) > 3 and dmg_parts[3] == 'M' else 'Female'
 
+        # Parse REF segment for group ID
+        record['Group ID'] = ''
+        for ref in REF_segments:
+            if ref.startswith(f"REF*1L*{record['Member ID']}"):
+                ref_parts = ref.split('*')
+                if len(ref_parts) > 2:
+                    record['Group ID'] = ref_parts[2]
+                break
+
         # Parse DTP segment for coverage date
         record['Coverage Start Date'] = ''
         for dtp in DTP_segments:
